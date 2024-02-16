@@ -26,7 +26,7 @@ def main():
     print("volumedisk completed.")
 
     print("NmacV2.")
-    run_command("python Nmac.py")
+    run_command("python NmacV2.py")
     time.sleep(sleepp)
     print("Nmac completed.")
 
@@ -51,14 +51,14 @@ def main():
     print("MonCru completed.")
 
     print("deviceclean")
-    run_command("python deviceclean.py")
+    run_command("python devicecleanV2.py")
     time.sleep(sleepp)
     print("deviceclean completed.")
 
-    print("driveclean")
-    run_command("python driveclean.py")
-    time.sleep(sleepp)
-    print("driveclean completed.")
+    #print("driveclean")
+    #run_command("python driveclean.py")
+    #time.sleep(sleepp)
+    #print("driveclean completed.")
 
    
     print("python logger.py.")
