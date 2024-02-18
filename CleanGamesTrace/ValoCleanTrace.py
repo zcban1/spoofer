@@ -1,62 +1,8 @@
 import os
 import winreg as reg
-
-def delete_key(root, path):
-    try:
-        reg.DeleteKey(root, path)
-        print(f"Chiave {path} eliminata.")
-    except FileNotFoundError:
-        print(f"La chiave {path} non esiste.")
-    except PermissionError:
-        print(f"Non hai i permessi per eliminare la chiave {path}.")
-    except OSError as e:
-        print(f"Errore durante l'eliminazione della chiave {path}: {e}")
-
-def delete_value(key_path, value_name):
-    try:
-        with reg.OpenKey(reg.HKEY_CURRENT_USER, key_path, 0, reg.KEY_ALL_ACCESS) as key:
-            reg.DeleteValue(key, value_name)
-            print(f"Valore {value_name} eliminato.")
-    except FileNotFoundError:
-        print(f"Il valore {value_name} non esiste.")
-    except OSError as e:
-        print(f"Errore durante l'eliminazione del valore {value_name}: {e}")
-
-# Percorsi delle chiavi da eliminare
-key_paths = [
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Riot Game Riot_Client.",
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Riot Game valorant.live"
-]
-
-# Elimina le chiavi
-for path in key_paths:
-    delete_key(reg.HKEY_CURRENT_USER, path)
-
-# Percorsi e nomi dei valori REG_DWORD da eliminare
-value_paths = {
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FeatureUsage\\AppSwitched": [
-        "C:\\Riot Games\\Riot Client\\UX\\RiotClientUx.exe",
-        "C:\\Riot Games\\VALORANT\\live\\ShooterGame\\Binaries\\Win64\\VALORANT-Win64-Shipping.exe"
-    ],
-    "SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache": [
-        "C:\\Riot Games\\Riot Client\\RiotClientServices.exe.FriendlyAppName",
-        "C:\\Riot Games\\Riot Client\\RiotClientServices.exe.ApplicationCompany"
-    ],
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run": [
-        "RiotClient"
-    ]
-}
-
-# Elimina i valori REG_DWORD
-for key_path, values in value_paths.items():
-    for value_name in values:
-        delete_value(key_path, value_name)
-
-# Elimina la chiave SHC
-shc_key_path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UFH\\SHC"
-delete_key(reg.HKEY_CURRENT_USER, shc_key_path)
-
-
+import shutil
+import tempfile
+from pathlib import Path
 
 # Contenuto dello script PowerShell
 powershell_script = """
@@ -170,30 +116,6 @@ foreach ($fileName in $fileNames) {
 }
 
 Write-Output "Elaborazione completata"
-
-# Definisci i percorsi delle chiavi nel Registro di sistema
-$firstKeyPath = "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Riot Game Riot_Client."
-$secondKeyPath = "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Riot Game valorant.live"
-
-# Verifica se le chiavi esistono e se sì, eliminale
-if (Test-Path $firstKeyPath) {
-    Remove-Item -Path $firstKeyPath -Force
-    Write-Host "Chiave $firstKeyPath eliminata."
-} else {
-    Write-Host "La chiave $firstKeyPath non esiste."
-}
-
-if (Test-Path $secondKeyPath) {
-    Remove-Item -Path $secondKeyPath -Force
-    Write-Host "Chiave $secondKeyPath eliminata."
-} else {
-    Write-Host "La chiave $secondKeyPath non esiste."
-}
-
-
-
-
-
 """
 
 
@@ -206,3 +128,108 @@ with open(powershell_script_path, 'w') as ps_file:
 
 # Esegui lo script PowerShell come amministratore usando PowerShell.exe
 os.system(f'powershell.exe -ExecutionPolicy Bypass -File "{powershell_script_path}"')
+
+
+def delete_key(root, path):
+    try:
+        reg.DeleteKey(root, path)
+        print(f"Chiave {path} eliminata.")
+    except FileNotFoundError:
+        print(f"La chiave {path} non esiste.")
+    except PermissionError:
+        print(f"Non hai i permessi per eliminare la chiave {path}.")
+    except OSError as e:
+        print(f"Errore durante l'eliminazione della chiave {path}: {e}")
+
+def delete_value(key_path, value_name):
+    try:
+        with reg.OpenKey(reg.HKEY_CURRENT_USER, key_path, 0, reg.KEY_ALL_ACCESS) as key:
+            reg.DeleteValue(key, value_name)
+            print(f"Valore {value_name} eliminato.")
+    except FileNotFoundError:
+        print(f"Il valore {value_name} non esiste.")
+    except OSError as e:
+        print(f"Errore durante l'eliminazione del valore {value_name}: {e}")
+
+# Percorsi delle chiavi da eliminare
+key_paths = [
+    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Riot Game Riot_Client.",
+    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Riot Game valorant.live"
+]
+
+# Elimina le chiavi
+for path in key_paths:
+    delete_key(reg.HKEY_CURRENT_USER, path)
+
+# Percorsi e nomi dei valori REG_DWORD da eliminare
+value_paths = {
+    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FeatureUsage\\AppSwitched": [
+        "C:\\Riot Games\\Riot Client\\UX\\RiotClientUx.exe",
+        "C:\\Riot Games\\VALORANT\\live\\ShooterGame\\Binaries\\Win64\\VALORANT-Win64-Shipping.exe"
+    ],
+    "SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache": [
+        "C:\\Riot Games\\Riot Client\\RiotClientServices.exe.FriendlyAppName",
+        "C:\\Riot Games\\Riot Client\\RiotClientServices.exe.ApplicationCompany"
+    ],
+    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run": [
+        "RiotClient"
+    ]
+}
+
+# Elimina i valori REG_DWORD
+for key_path, values in value_paths.items():
+    for value_name in values:
+        delete_value(key_path, value_name)
+
+# Elimina la chiave SHC
+shc_key_path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UFH\\SHC"
+delete_key(reg.HKEY_CURRENT_USER, shc_key_path)
+
+
+
+# Lista dei nomi delle cartelle da eliminare
+folders_to_delete = ["Epic Games", "Riot Games", "Ubisoft Game Launcher", "Steam", "Package Cache", "VALORANT", "EpicGamesLauncher"]
+
+# Percorsi AppData Local, Roaming e ProgramData
+app_data_local = Path(os.getenv('LOCALAPPDATA'))
+app_data_roaming = Path(os.getenv('APPDATA'))
+program_data = Path(os.getenv('PROGRAMDATA'))
+
+# Percorsi delle cartelle temporanee
+temp_user = Path(tempfile.gettempdir())
+temp_windows = Path("C:/Windows/Temp")
+
+def remove_folder_if_exists(base_path, folder_name=""):
+    path_to_delete = base_path / folder_name
+    if path_to_delete.exists():
+        try:
+            shutil.rmtree(path_to_delete)
+            print(f"Eliminata la cartella: {path_to_delete}")
+        except Exception as e:
+            print(f"Non è stato possibile eliminare: {path_to_delete}. Errore: {e}")
+    else:
+        print(f"La cartella non esiste: {path_to_delete}")
+
+def remove_contents(path):
+    if path.exists():
+        for item in path.glob('*'):
+            try:
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
+                print(f"Eliminato: {item}")
+            except Exception as e:
+                print(f"Non è stato possibile eliminare l'oggetto: {item}. Errore: {e}")
+        print(f"Tentativo di eliminazione completato per: {path}")
+    else:
+        print(f"Il percorso non esiste: {path}")
+
+# Pulizia delle cartelle specificate e delle cartelle temporanee
+for folder in folders_to_delete:
+    remove_folder_if_exists(app_data_local, folder)
+    remove_folder_if_exists(app_data_roaming, folder)
+    remove_folder_if_exists(program_data, folder)
+
+remove_contents(temp_user)
+remove_contents(temp_windows)
