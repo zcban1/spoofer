@@ -46,10 +46,10 @@ def main():
     run_command(f"python {utils_path}ResetCleanV2.py")
     print("ResetClean completed.")
 
-    print("MonCru")
-    run_command(f"python {utils_path}MonCru.py")
-    print("MonCru completed.")
-    time.sleep(2)
+    #print("MonCru")
+    #run_command(f"python {utils_path}MonCru.py")
+    #print("MonCru completed.")
+    #time.sleep(2)
 
     print("Rename Pc & User")
     run_command(f"python {utils_path}rename.py")
