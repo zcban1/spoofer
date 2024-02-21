@@ -1,57 +1,54 @@
 import os
 
-def unisci_files_testo(cartella_input, file_output):
-    # Ottiene il percorso corrente di lavoro
-    percorso_corrente = os.getcwd()
+def unisci_files_testo_in_spoofer_main(disk, file_output):
+    # Cerca la cartella 'spoofer-main' nel disco specificato
+    spoofer_main_path = None
+    for root, dirs, files in os.walk(disk):
+        if 'spoofer-main' in dirs:
+            spoofer_main_path = os.path.join(root, 'spoofer-main')
+            print(f"Trovata 'spoofer-main' in: {spoofer_main_path}")
+            break
 
-    # Unisce il percorso corrente con la cartella di input
-    percorso_cartella_input = os.path.join(percorso_corrente, cartella_input)
-
-    # Verifica se la cartella di input esiste
-    if not os.path.exists(percorso_cartella_input):
-        print(f"La cartella '{cartella_input}' non esiste.")
+    # Verifica se 'spoofer-main' è stata trovata
+    if spoofer_main_path is None:
+        print("Cartella 'spoofer-main' non trovata.")
         return
 
-    # Lista tutti i file nella cartella di input
-    files_di_testo = [f for f in os.listdir(percorso_cartella_input) if f.endswith('.txt')]
+    # Lista tutti i file di testo nella cartella 'spoofer-main'
+    files_di_testo = [f for f in os.listdir(spoofer_main_path) if f.endswith('.txt')]
 
-    # Verifica se ci sono file di testo nella cartella
+    # Verifica se ci sono file di testo
     if not files_di_testo:
-        print(f"Nessun file di testo trovato nella cartella '{cartella_input}'.")
+        print("Nessun file di testo trovato nella cartella 'spoofer-main'.")
         return
 
-    # Unisce il percorso corrente con il percorso del file di output
-    percorso_file_output = os.path.join(percorso_cartella_input, file_output)
+    # Crea il percorso completo al file di output
+    percorso_file_output = os.path.join(spoofer_main_path, file_output)
 
-    # Apre il file di output in modalità scrittura
+    # Unisce i file di testo
     with open(percorso_file_output, 'w') as output_file:
-        # Cicla attraverso tutti i file di testo nella cartella
         for file_di_testo in files_di_testo:
-            # Crea il percorso completo del file di input
-            percorso_file_input = os.path.join(percorso_cartella_input, file_di_testo)
-
-            # Apre il file di input in modalità lettura
+            percorso_file_input = os.path.join(spoofer_main_path, file_di_testo)
             with open(percorso_file_input, 'r') as input_file:
-                # Scrive il nome del file come separatore
                 output_file.write(f"=== {file_di_testo} ===\n\n")
-                
-                # Legge il contenuto del file di input e lo scrive nel file di output
                 output_file.write(input_file.read())
-
-                # Aggiunge una linea vuota come separatore tra i file
                 output_file.write('\n\n')
 
-    print(f"I file di testo nella cartella '{cartella_input}' sono stati uniti con successo in '{percorso_file_output}'.")
-    
-    # Elimina i file originali
+    print(f"I file di testo nella cartella 'spoofer-main' sono stati uniti in '{percorso_file_output}'.")
+
+    # Opzionale: Elimina i file originali dopo l'unione, tranne 'unificato.txt'
     for file_di_testo in files_di_testo:
-        percorso_file_input = os.path.join(percorso_cartella_input, file_di_testo)
-        os.remove(percorso_file_input)
-        print(f"File '{file_di_testo}' eliminato.")
+        # Verifica che il file corrente non sia il file di output 'unificato.txt'
+        if file_di_testo != file_output:  # Assicurati che 'file_output' contenga il nome del file di output, ad esempio 'unificato.txt'
+            percorso_file_input = os.path.join(spoofer_main_path, file_di_testo)
+            os.remove(percorso_file_input)
+            print(f"File '{file_di_testo}' eliminato.")
 
-# Esempio di utilizzo con percorsi relativi
-cartella_input = os.path.dirname(os.path.abspath(__file__))
+
+# Esempio di utilizzo
+disk = 'C:\\'  # Percorso per il disco C:
 file_output = 'unificato.txt'
+unisci_files_testo_in_spoofer_main(disk, file_output)
 
-unisci_files_testo(cartella_input, file_output)
+
 
