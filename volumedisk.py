@@ -3,25 +3,16 @@ import random
 import subprocess
 
 def get_drive_letters():
-    output_file = "Drive_Letters.txt"
-
-    # Elimina il file di output se esiste già
-    if os.path.exists(output_file):
-        os.remove(output_file)
-
     # Esegui il comando WMIC e ottieni le lettere dei dispositivi
-    with open(output_file, "w") as file:
-        result = subprocess.run(["wmic", "logicaldisk", "list", "brief"], capture_output=True, text=True)
-        lines = result.stdout.splitlines()
-        for line in lines[1:]:
-            elements = line.split()
-            if elements:
-                drive_letter = elements[0]
-                file.write(f"{drive_letter}\n")
+    result = subprocess.run(["wmic", "logicaldisk", "get", "deviceid"], capture_output=True, text=True)
+    lines = result.stdout.splitlines()
+    drive_letters = []
+    for line in lines[1:]:  # Ignora l'intestazione
+        elements = line.strip()
+        if elements:
+            drive_letters.append(elements)
+    return drive_letters
 
-    # Visualizza il contenuto del file di output
-    with open(output_file, "r") as file:
-        print(file.read())
 
 def rename_drives():
     alphanumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -85,6 +76,9 @@ def generate_serial_and_log():
     print("Operazioni completate. Vedi il file di log per i dettagli:", log_file)
 
 # Chiamate alle funzioni
-get_drive_letters()
+drive_letters = get_drive_letters()
+print(drive_letters)
 rename_drives()
 generate_serial_and_log()
+
+
