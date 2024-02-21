@@ -1,55 +1,60 @@
 import winreg
 import uuid
 import random
-import ctypes
-import sys
-import time
-import subprocess
-import os
 import string
-
+import os
 
 class Spoofer:
-    class MachineId:        
+    @staticmethod
+    def log_change(operation, old_value, new_value):
+        log_message = f"[SPOOFER] {operation} Changed from {old_value} to {new_value}"
+        print(log_message)  # Print to console
+        with open("spoofer_log.txt", "a") as log_file:
+            log_file.write(log_message + "\n")
+
+    class MachineId:
         @staticmethod
         def spoof():
             try:
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\SQMClient", 0, winreg.KEY_WRITE) as key:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\SQMClient", 0, winreg.KEY_ALL_ACCESS) as key:
+                    old_value, _ = winreg.QueryValueEx(key, "MachineId")
                     new_value = "{" + str(uuid.uuid4()) + "}"
                     winreg.SetValueEx(key, "MachineId", 0, winreg.REG_SZ, new_value)
-                    print("[SPOOFER] MachineId Changed to", new_value)
+                    Spoofer.log_change("MachineId", old_value, new_value)
                     return True
-            except:
+            except Exception as e:
+                print(f"[SPOOFER] Error: {e}")
                 return False
 
     class HardwareGUID:
-
         @staticmethod
         def spoof():
             try:
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001", 0, winreg.KEY_WRITE) as key:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001", 0, winreg.KEY_ALL_ACCESS) as key:
+                    old_value, _ = winreg.QueryValueEx(key, "HwProfileGuid")
                     new_value = "{" + str(uuid.uuid4()) + "}"
                     winreg.SetValueEx(key, "HwProfileGuid", 0, winreg.REG_SZ, new_value)
-                    print("[SPOOFER] HwProfileGuid Changed to", new_value)
+                    Spoofer.log_change("HwProfileGuid", old_value, new_value)
                     return True
-            except:
+            except Exception as e:
+                print(f"[SPOOFER] Error: {e}")
                 return False
 
     class MachineGUID:
         @staticmethod
         def spoof():
             try:
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Cryptography", 0, winreg.KEY_WRITE) as key:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Cryptography", 0, winreg.KEY_ALL_ACCESS) as key:
+                    old_value, _ = winreg.QueryValueEx(key, "MachineGuid")
                     new_value = str(uuid.uuid4())
                     winreg.SetValueEx(key, "MachineGuid", 0, winreg.REG_SZ, new_value)
-                    print("[SPOOFER] MachineGuid Changed to", new_value)
+                    Spoofer.log_change("MachineGuid", old_value, new_value)
                     return True
-            except:
+            except Exception as e:
+                print(f"[SPOOFER] Error: {e}")
                 return False
 
-
     class EFIVariables:
-
         @staticmethod
         def spoof():
             try:
@@ -72,125 +77,205 @@ class Spoofer:
             return ''.join(random.choice(characters) for _ in range(length))
 
         @staticmethod
-        def spoof():                
-            # Modify BIOSReleaseDate
-            dayStr = random.randint(1, 28)
-            monthStr = random.randint(1, 12)
-            winreg.SetValueEx(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001", "BIOSReleaseDate", winreg.REG_SZ, f"{dayStr}/{monthStr}/{random.randint(2000, 2023)}")
-            print("[SPOOFER] BIOSReleaseDate Information values modified successfully.")   
-            # Modify BIOSVersion
-            winreg.SetValueEx(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001", "BIOSVersion", winreg.REG_SZ, Spoofer.SystemInfo.RandomId(10))
-            print("[SPOOFER] BIOSVersion Information values modified successfully.")    
-            # Modify ComputerHardwareId
-            winreg.SetValueEx(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001", "ComputerHardwareId", winreg.REG_SZ, f"{{{uuid.uuid4()}}}")
-            print("[SPOOFER] ComputerHardwareId Information values modified successfully.")     
-            # Modify ComputerHardwareIds
-            computer_hardware_ids = [str(uuid.uuid4()) for _ in range(3)]
-            computer_hardware_ids_str = "\n".join(computer_hardware_ids)
-            winreg.SetValueEx(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001", "ComputerHardwareIds", winreg.REG_SZ, computer_hardware_ids_str)
-            print("[SPOOFER] ComputerHardwareIds Information values modified successfully.")     
-            # Modify SystemManufacturer
-            winreg.SetValueEx(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001", "SystemManufacturer", winreg.REG_SZ, Spoofer.SystemInfo.RandomId(15))
-            print("[SPOOFER] SystemManufacturer Information values modified successfully.")    
-            # Modify SystemProductName
-            winreg.SetValueEx(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001", "SystemProductName", winreg.REG_SZ, Spoofer.SystemInfo.RandomId(6))
+        def spoof():
+            key_path = "SYSTEM\\CurrentControlSet\\Control\\IDConfigDB\\Hardware Profiles\\0001"
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_ALL_ACCESS) as key:
+                    # Modify BIOSReleaseDate
+                    try:
+                        old_bios_date, _ = winreg.QueryValueEx(key, "BIOSReleaseDate")
+                    except FileNotFoundError:
+                        old_bios_date = "Not Set"
+                    new_bios_date = f"{random.randint(1, 28)}/{random.randint(1, 12)}/{random.randint(2000, 2023)}"
+                    winreg.SetValueEx(key, "BIOSReleaseDate", 0, winreg.REG_SZ, new_bios_date)
+                    Spoofer.log_change("BIOSReleaseDate", old_bios_date, new_bios_date)
+
+                    # Modify BIOSVersion
+                    try:
+                        old_bios_version, _ = winreg.QueryValueEx(key, "BIOSVersion")
+                    except FileNotFoundError:
+                        old_bios_version = "Not Set"
+                    new_bios_version = Spoofer.SystemInfo.RandomId(5)
+                    winreg.SetValueEx(key, "BIOSVersion", 0, winreg.REG_SZ, new_bios_version)
+                    Spoofer.log_change("BIOSVersion", old_bios_version, new_bios_version)
+
+                    # Modify ComputerHardwareId
+                    try:
+                        old_hardware_id, _ = winreg.QueryValueEx(key, "ComputerHardwareId")
+                    except FileNotFoundError:
+                        old_hardware_id = "Not Set"
+
+                    new_hardware_id = f"{{{uuid.uuid4()}}}"
+                    winreg.SetValueEx(key, "ComputerHardwareId", 0, winreg.REG_SZ, new_hardware_id)
+                    Spoofer.log_change("ComputerHardwareId", old_hardware_id, new_hardware_id)
+
+                    return True
+            except Exception as e:
+                print(f"[SPOOFER] Error modifying SystemInfo: {e}")
+                return False
+
+    class SystemInfoExtended:
+        @staticmethod
+        def random_id(length):
+            characters = string.digits
+            return ''.join(random.choice(characters) for _ in range(length))
+
+        @staticmethod
+        def spoof():
+            try:
+                # Paths for system and BIOS information in the registry
+                system_info_key_path = "HARDWARE\\DESCRIPTION\\System"
+                bios_info_key_path = "HARDWARE\\DESCRIPTION\\System\\BIOS"
+
+                # Spoofing system information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as system_key:
+                    value_name = "SystemFamily"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(system_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(system_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
                 
-            print("[SPOOFER] SystemProductName Information values modified successfully.")
+                # Spoofing system information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as system_key:
+                    value_name = "SystemManufacturer"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(system_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(system_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+                # Spoofing system information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as system_key:
+                    value_name = "SystemProductName"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(system_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(system_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+                # Spoofing system information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as system_key:
+                    value_name = "SystemSKU"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(system_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(system_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+                # Spoofing system information   
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as system_key:
+                    value_name = "SystemVersion"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(system_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(system_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+
+
+                # Spoofing Board information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as bios_key:
+                    value_name = "BaseBoardManufacturer"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(bios_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(bios_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+                # Spoofing Board information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as bios_key:
+                    value_name = "BaseBoardProduct"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(bios_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(bios_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+                # Spoofing Board information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as bios_key:
+                    value_name = "BaseBoardVersion"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(bios_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(bios_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+                # Spoofing Board information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as bios_key:
+                    value_name = "BIOSReleaseDate"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(bios_key, value_name)
+                    new_value = f"{random.randint(1, 28)}/{random.randint(1, 12)}/{random.randint(2000, 2023)}"
+                    winreg.SetValueEx(bios_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+                # Spoofing Board information
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, bios_info_key_path, 0, winreg.KEY_ALL_ACCESS) as bios_key:
+                    value_name = "BIOSVendor"
+                    old_value = Spoofer.SystemInfoExtended.get_current_value(bios_key, value_name)
+                    new_value = Spoofer.SystemInfoExtended.random_id(14)
+                    winreg.SetValueEx(bios_key, value_name, 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change(value_name, old_value, new_value)
+
+                return True
+            except Exception as e:
+                print(f"[SPOOFER] Error modifying extended SystemInfo: {e}")
+                return False
+
+        @staticmethod
+        def get_current_value(key, value_name):
+            try:
+                return winreg.QueryValueEx(key, value_name)[0]
+            except FileNotFoundError:
+                return "Not Set"
 
 
     class ProductId:
-        regeditPath = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion"
-        key = "ProductID"
-
         @staticmethod
         def get_value():
             try:
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, Spoofer.ProductId.regeditPath) as key:
-                    value, _ = winreg.QueryValueEx(key, Spoofer.ProductId.key)
-                    return str(value)
-            except:
-                return "ERR"
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, winreg.KEY_READ) as key:
+                    value, _ = winreg.QueryValueEx(key, "ProductId")
+                    return value
+            except Exception as e:
+                print(f"[SPOOFER] Error reading ProductId: {e}")
+                return "Error"
 
-        @staticmethod
-        def set_value(value):
-            try:
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, Spoofer.ProductId.regeditPath, 0, winreg.KEY_WRITE) as key:
-                    winreg.SetValueEx(key, Spoofer.ProductId.key, 0, winreg.REG_SZ, value)
-                    return True
-            except:
-                return False
         @staticmethod
         def spoof():
             old_value = Spoofer.ProductId.get_value()
-            new_value = "{}-{}-{}-{}".format(''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=5)),
-                                             ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=5)),
-                                             ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=5)),
-                                             ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=5)))
-            result = Spoofer.ProductId.set_value(new_value)
-            if result:
-                print("[SPOOFER] Computer ProductID Changed from", old_value, "to", new_value)
-            else:
-                print("[SPOOFER] Error accessing the Registry... Maybe run as admin")
-            return result
-
+            new_value = "{}-{}-{}-{}".format(
+                ''.join(random.choices(string.ascii_uppercase + string.digits, k=5)),
+                ''.join(random.choices(string.ascii_uppercase + string.digits, k=5)),
+                ''.join(random.choices(string.ascii_uppercase + string.digits, k=5)),
+                ''.join(random.choices(string.ascii_uppercase + string.digits, k=5)))
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, winreg.KEY_WRITE) as key:
+                    winreg.SetValueEx(key, "ProductId", 0, winreg.REG_SZ, new_value)
+                    Spoofer.log_change("ProductId", old_value, new_value)
+                    return True
+            except Exception as e:
+                print(f"[SPOOFER] Error modifying ProductId: {e}")
+                return False
 
     class InstallationID:
         @staticmethod
         def spoof():
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, winreg.KEY_WRITE) as key:
-                newInstallationID = str(uuid.uuid4())
-                winreg.SetValueEx(key, "InstallationID", 0, winreg.REG_SZ, newInstallationID)
-                print("[SPOOFER] InstallationID Changed to", newInstallationID)
-                return True
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, winreg.KEY_ALL_ACCESS) as key:
+                    # Attempt to read the old InstallationID value. If it doesn't exist, use a placeholder.
+                    try:
+                        old_value, _ = winreg.QueryValueEx(key, "InstallationID")
+                    except FileNotFoundError:
+                        old_value = "Not Set"
 
-    class PCName:
-        @staticmethod
-        def RandomId(length):
-            characters = string.ascii_letters + string.digits
-            return ''.join(random.choice(characters) for _ in range(length))
-        
-        @staticmethod
-        def spoof():
-
-            randomName = Spoofer.SystemInfo.RandomId(8)  # Generate a random PC name
-
-            # Modify ComputerName keys
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName", 0, winreg.KEY_WRITE) as computerName:
-                winreg.SetValueEx(computerName, "ComputerName", 0, winreg.REG_SZ, randomName)
-                winreg.SetValueEx(computerName, "ActiveComputerName", 0, winreg.REG_SZ, randomName)
-                winreg.SetValueEx(computerName, "ComputerNamePhysicalDnsDomain", 0, winreg.REG_SZ, "")
-
-            # Modify ActiveComputerName keys
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName", 0, winreg.KEY_WRITE) as activeComputerName:
-                winreg.SetValueEx(activeComputerName, "ComputerName", 0, winreg.REG_SZ, randomName)
-                winreg.SetValueEx(activeComputerName, "ActiveComputerName", 0, winreg.REG_SZ, randomName)
-                winreg.SetValueEx(activeComputerName, "ComputerNamePhysicalDnsDomain", 0, winreg.REG_SZ, "")
-
-            # Modify Tcpip Parameters keys
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters", 0, winreg.KEY_WRITE) as tcpipParams:
-                winreg.SetValueEx(tcpipParams, "Hostname", 0, winreg.REG_SZ, randomName)
-                winreg.SetValueEx(tcpipParams, "NV Hostname", 0, winreg.REG_SZ, randomName)
-
-            # Modify Tcpip Interfaces keys
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces", 0, winreg.KEY_WRITE) as tcpipInterfaces:
-                for interfaceKey in winreg.QueryInfoKey(tcpipInterfaces)[0]:
-                    with winreg.OpenKey(tcpipInterfaces, interfaceKey, 0, winreg.KEY_WRITE) as interfaceSubKey:
-                        winreg.SetValueEx(interfaceSubKey, "Hostname", 0, winreg.REG_SZ, randomName)
-                        winreg.SetValueEx(interfaceSubKey, "NV Hostname", 0, winreg.REG_SZ, randomName)
-
-            print("[SPOOFER] PC Name Changed to", randomName)
-            return True
-
-
-
+                    newInstallationID = str(uuid.uuid4())
+                    winreg.SetValueEx(key, "InstallationID", 0, winreg.REG_SZ, newInstallationID)
+                    # Log the change of InstallationID.
+                    Spoofer.log_change("InstallationID", old_value, newInstallationID)
+                    return True
+            except Exception as e:
+                print(f"[SPOOFER] Error modifying InstallationID: {e}")
+                return False
 
 if __name__ == "__main__":
-
     Spoofer.MachineId.spoof()
     Spoofer.HardwareGUID.spoof()
     Spoofer.MachineGUID.spoof()
     Spoofer.EFIVariables.spoof()
     Spoofer.SystemInfo.spoof()
+    Spoofer.SystemInfoExtended.spoof()
     Spoofer.ProductId.spoof()
     Spoofer.InstallationID.spoof()
-    #Spoofer.PCName.spoof()
