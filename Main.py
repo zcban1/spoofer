@@ -14,6 +14,10 @@ def main():
     # Aggiungere il percorso della cartella 'utils' al comando
     utils_path = "utils/"  # Assicurati che questo percorso sia corretto per il tuo sistema
 
+    print("rimuovi_vecchi_log.py.")
+    run_command(f"python {utils_path}rimuovi_vecchi_log.py")
+    print("rimuovi_vecchi_log completed.")
+    
     print("python GetSerial.py.")
     run_command(f"python {utils_path}GetSerial.py")
     print("GetSerial completed.")
@@ -34,9 +38,9 @@ def main():
     run_command(f"python {utils_path}BIOSAMI.py")
     print("BIOS-AMI completed.")
 
-    print("Rename Pc & User")
-    run_command(f"python {utils_path}rename.py")
-    print("Rename Pc & User completed.")
+    print("deviceclean")
+    run_command(f"python {utils_path}devicecleanV2.py")
+    print("deviceclean completed.")
 
     print("ResetClean")
     run_command(f"python {utils_path}ResetCleanV2.py")
@@ -45,12 +49,11 @@ def main():
     print("MonCru")
     run_command(f"python {utils_path}MonCru.py")
     print("MonCru completed.")
+    time.sleep(2)
 
-    print("deviceclean")
-    run_command(f"python {utils_path}devicecleanV2.py")
-    time.sleep(15)
-    print("deviceclean completed.")
-
+    print("Rename Pc & User")
+    run_command(f"python {utils_path}rename.py")
+    print("Rename Pc & User completed.")
 
     print("python logger.py.")
     run_command(f"python {utils_path}logger.py")
@@ -59,8 +62,9 @@ def main():
     print(f"Results have been saved")
 
     print("Riavvio del computer in corso...")
-    os.system("shutdown /r /t 0 /f /d p:4:1")
+    os.system("shutdown /r /t 1 /f /d p:4:1")
 
 
 if __name__ == "__main__":
     main()
+
